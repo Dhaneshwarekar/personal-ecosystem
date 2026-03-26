@@ -1,0 +1,120 @@
+services:
+
+    nextcloud:
+      image: nextcloud:latest
+      container_name: nextcloud
+      ports:
+        - "8080:80"
+      volumes:
+        - nextcloud_data:/var/www/html
+      environment:
+        - MYSQL_HOST=mariadb
+        - MYSQL_DATABASE=nextcloud
+        - MYSQL_USER=ncuser
+        - MYSQL_PASSWORD=secret123
+      depends_on:
+        - mariadb
+      networks:
+        - ecosystem
+
+    mariadb:
+      image: mariadb:10.11
+      container_name: mariadb
+      volumes:
+        - db_data:/var/lib/mysql
+      environment:
+        - MYSQL_ROOT_PASSWORD=rootsecret
+        - MYSQL_DATABASE=nextcloud
+        - MYSQL_USER=ncuser
+        - MYSQL_PASSWORD=secret123
+      networks:
+        - ecosystem
+
+    uptime-kuma:
+      image: louislam/uptime-kuma:latest
+      container_name: uptime-kuma
+      ports:
+        - "3001:3001"
+      volumes:
+        - uptime-kuma_data:/app/data
+      networks:
+        - ecosystem
+      restart: unless-stopped
+
+    joplin:
+      image: joplin/server:latest
+      container_name: joplin
+      ports:
+        - "8081:22300"
+      environment:
+        - APP_PORT=22300
+        - APP_BASE_URL=http://localhost:8081
+        - DB_CLIENT=pg
+        - POSTGRES_HOST=joplin-db
+        - POSTGRES_PORT=5432
+        - POSTGRES_DATABASE=joplin
+        - POSTGRES_USER=joplin
+        - POSTGRES_PASSWORD=joplin123
+      depends_on:
+        - joplin-db
+      networks:
+        - ecosystem
+      restart: unless-stopped
+
+    joplin-db:
+      image: postgres:15
+      container_name: joplin-db
+      environment:
+        - POSTGRES_DB=joplin
+        - POSTGRES_USER=joplin
+        - POSTGRES_PASSWORD=joplin123
+      volumes:
+        - joplin_db_data:/var/lib/postgresql/data
+      networks:
+        - ecosystem
+      restart: unless-stopped
+
+    vaultwarden:
+      image: vaultwarden/server:1.29.2
+      container_name: vaultwarden
+      ports:
+        - "8082:80"
+      volumes:
+        - vaultwarden_data:/data
+      environment:
+        - WEBSOCKET_ENABLED=true
+        - SIGNUPS_ALLOWED=true
+        - DOMAIN=http://localhost:8082
+        - ADMIN_TOKEN=dhanesh@admin2025
+      networks:
+        - ecosystem
+      restart: unless-stopped
+
+    navidrome:
+      image: deluan/navidrome:latest
+      container_name: navidrome
+      ports:
+        - "4533:4533"
+      volumes:
+        - navidrome_data:/data
+        - navidrome_music:/music
+      environment:
+        - ND_SCANSCHEDULE=1h
+        - ND_LOGLEVEL=info
+        - ND_MUSICFOLDER=/music
+      networks:
+        - ecosystem
+      restart: unless-stopped
+
+
+volumes:
+  nextcloud_data:
+  db_data:
+  uptime-kuma_data:
+  joplin_db_data:
+  vaultwarden_data:
+  navidrome_data:
+  navidrome_music:
+
+networks:
+  ecosystem:
